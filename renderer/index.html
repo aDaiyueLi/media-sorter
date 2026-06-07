@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data:; media-src 'self' file:; font-src 'self';">
+  <title>媒体文件分类工具</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/viewer.css">
+  <link rel="stylesheet" href="styles/tags.css">
+</head>
+<body>
+  <!-- ==================== 主布局容器 ==================== -->
+  <div id="app-container">
+
+    <!-- ===== 左侧面板：媒体查看区 ===== -->
+    <div id="viewer-panel">
+      <!-- 顶部信息栏：文件夹路径 + 当前文件名 + 文件计数 + 分类文件夹 -->
+      <div id="viewer-info-bar">
+        <div id="folder-path" class="info-text" title="点击选择文件夹">
+          <span class="info-icon">📁</span>
+          <span id="folder-path-text">未选择文件夹</span>
+        </div>
+        <div id="file-info" class="info-text">
+          <span id="file-name-text"></span>
+          <span id="file-count-text"></span>
+          <span id="move-folder-text" class="move-folder-badge" title="分类后文件夹"></span>
+        </div>
+      </div>
+
+      <!-- 媒体显示区域 -->
+      <div id="media-container">
+        <!-- 初始状态：空面板 + 添加按钮 -->
+        <div id="media-empty-state" class="empty-state">
+          <button id="btn-add-folder-left" class="btn-add-large" title="选择要分类的文件夹">
+            <span class="add-icon">＋</span>
+          </button>
+        </div>
+        <!-- 图片查看器（按需显示） -->
+        <img id="image-viewer" src="" alt="" style="display: none;">
+        <!-- 视频播放器（按需显示） -->
+        <video id="video-viewer" src="" preload="metadata" style="display: none;"></video>
+        <!-- 加载指示器 -->
+        <div id="media-loading" class="loading-indicator" style="display: none;">加载中...</div>
+      </div>
+
+      <!-- 底部控制栏：视频控制 + 文件导航（全部集中底部） -->
+      <div id="control-bar" style="display: none;">
+        <!-- 视频/GIF 控制按钮 -->
+        <div id="media-controls">
+          <button id="btn-seek-back" class="ctrl-btn ctrl-btn-lg" title="快退">⏪</button>
+          <button id="btn-play-pause" class="ctrl-btn ctrl-btn-lg ctrl-btn-play" title="播放/暂停">⏵</button>
+          <button id="btn-seek-forward" class="ctrl-btn ctrl-btn-lg" title="快进">⏩</button>
+          <!-- 进度条 -->
+          <div id="progress-bar-container">
+            <span id="time-current">00:00</span>
+            <input type="range" id="progress-bar" min="0" max="100" value="0" step="0.1">
+            <span id="time-duration">00:00</span>
+          </div>
+          <!-- 音量控制：静音按钮 + 百分比数字 -->
+          <button id="btn-volume-icon" class="ctrl-btn ctrl-btn-lg" title="静音/取消静音">🔊</button>
+          <span id="volume-display" class="volume-percent" title="当前音量">80%</span>
+        </div>
+        <!-- 文件导航按钮 -->
+        <div id="file-nav-controls">
+          <button id="btn-prev-file" class="ctrl-btn ctrl-btn-lg" title="上一个文件 (PageUp)">◀ 上一个</button>
+          <button id="btn-rotate" class="ctrl-btn ctrl-btn-lg" title="旋转 90° (Shift)">↻ 旋转</button>
+          <button id="btn-next-file" class="ctrl-btn ctrl-btn-lg" title="下一个文件 (PageDown)">下一个 ▶</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 分割线（可拖拽调整宽度） ===== -->
+    <div id="panel-resizer"></div>
+
+    <!-- ===== 右侧面板：标签分类区 ===== -->
+    <div id="tags-panel">
+      <div id="tags-panel-header">
+        <span class="panel-title">分类标签</span>
+      </div>
+      <!-- 标签列表区域 -->
+      <div id="tags-container">
+        <!-- 空状态：显示加号按钮 -->
+        <div id="tags-empty-state" class="empty-state">
+          <button id="btn-add-tag-first" class="btn-add-large" title="添加分类标签">
+            <span class="add-icon">＋</span>
+          </button>
+        </div>
+        <!-- 标签列表（动态填充 .tag-chip 元素） -->
+        <div id="tags-list"></div>
+        <!-- 标签列表末尾的添加按钮 -->
+        <button id="btn-add-tag" class="btn-add-tag" title="添加新标签">＋</button>
+      </div>
+      <!-- 标签面板右键菜单提示 -->
+      <div id="tags-panel-footer">
+        <span class="footer-hint">右键空白处打开批量选项</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 底部操作栏 ==================== -->
+  <div id="action-bar">
+    <button id="btn-confirm" class="btn-action btn-confirm" title="确认打标签 (Enter)">
+      ✓ 确认
+    </button>
+    <button id="btn-undo" class="btn-action btn-undo" title="撤回上次操作 (Backspace)">
+      ↩ 撤回
+    </button>
+  </div>
+
+  <!-- ==================== 模态弹窗容器 ==================== -->
+  <div id="modal-overlay" class="modal-overlay" style="display: none;">
+    <div id="modal-content" class="modal-content"></div>
+  </div>
+
+  <!-- ==================== 右键菜单容器 ==================== -->
+  <div id="context-menu" class="context-menu" style="display: none;"></div>
+
+  <!-- 脚本加载 -->
+  <script src="js/settings.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/shortcuts.js"></script>
+  <script src="js/mediaViewer.js"></script>
+  <script src="js/tagPanel.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

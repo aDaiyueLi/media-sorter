@@ -1,0 +1,88 @@
+/**
+ * viewer.css - 媒体查看器样式
+ * 图片查看器（缩放/拖动/旋转）和视频播放器的样式
+ */
+
+/* ==================== 图片查看器 ==================== */
+
+#image-viewer {
+  /* 图片自身定位由其 transform 决定（缩放/拖动/旋转通过 JS 操作 inline style） */
+  max-width: none;
+  max-height: none;
+  cursor: grab;
+  transition: none;
+  position: relative;
+}
+
+#image-viewer:active {
+  cursor: grabbing;
+}
+
+/* 图片旋转时禁用平滑过渡（每次 90° 跳变） */
+#image-viewer.no-transition {
+  transition: none !important;
+}
+
+/* ==================== 视频播放器 ==================== */
+
+#video-viewer {
+  max-width: 100%;
+  max-height: 100%;
+  background-color: #000;
+  outline: none;
+}
+
+/* 隐藏视频原生控制栏 */
+#video-viewer::-webkit-media-controls {
+  display: none !important;
+}
+
+/* ==================== 高级按钮样式 ==================== */
+
+/* 播放/暂停按钮在激活状态时高亮 */
+#btn-play-pause.playing {
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+/* 旋转按钮 */
+#btn-rotate:active {
+  transform: rotate(90deg);
+  transition: transform 0.15s ease;
+}
+
+/* 上一个/下一个按钮 */
+#btn-prev-file, #btn-next-file {
+  font-weight: 600;
+}
+
+/* ==================== 媒体容器内消息 ==================== */
+
+/* 错误提示（显示在媒体区域中央） */
+.media-center-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.media-center-message .icon {
+  font-size: 48px;
+}
+
+.media-center-message .text {
+  opacity: 0.7;
+}
+
+/* ==================== 边界循环切换动画 ==================== */
+
+.media-switch-flash {
+  animation: flash-overlay 0.15s ease;
+}
+
+@keyframes flash-overlay {
+  0% { filter: brightness(0.7); }
+  100% { filter: brightness(1); }
+}

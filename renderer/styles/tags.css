@@ -1,0 +1,200 @@
+/**
+ * tags.css - 标签面板样式
+ * 标签芯片、标签选中状态、拖拽、快捷键角标等
+ */
+
+/* ==================== 标签列表 ==================== */
+
+#tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+/* ==================== 标签芯片 ==================== */
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  position: relative;
+}
+
+.tag-chip:hover {
+  border-color: var(--accent-color);
+  background-color: var(--bg-hover);
+}
+
+/* 选中状态 */
+.tag-chip.selected {
+  border-color: var(--accent-color);
+  background-color: rgba(124, 138, 255, 0.2);
+  box-shadow: 0 0 8px rgba(124, 138, 255, 0.3);
+}
+
+/* 未命名标签（亮红色高亮） */
+.tag-chip.unnamed {
+  border-color: var(--tag-unset-bg) !important;
+  background-color: var(--tag-unset-bg) !important;
+  color: var(--tag-unset-text) !important;
+  animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 16px rgba(255, 68, 68, 0.8); }
+}
+
+/* 快捷键角标 */
+.tag-chip .shortcut-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.tag-chip.selected .shortcut-badge {
+  background-color: var(--accent-color);
+  color: #fff;
+}
+
+/* 标签名称文本 */
+.tag-chip .tag-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+/* 重命名输入框（替代标签名称文本显示） */
+.tag-chip .tag-rename-input {
+  width: 80px;
+  padding: 2px 6px;
+  border: 1px solid var(--accent-color);
+  border-radius: 4px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+/* ==================== 拖拽状态 ==================== */
+
+.tag-chip.dragging {
+  opacity: 0.5;
+}
+
+.tag-chip.drag-over {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+/* ==================== 添加标签按钮 ==================== */
+
+#btn-add-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px dashed var(--border-color);
+  background-color: transparent;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 4px;  /* 对齐标签芯片的内间距 */
+}
+
+#btn-add-tag:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background-color: rgba(124, 138, 255, 0.1);
+}
+
+#btn-add-tag.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* ==================== 常用标签选择弹窗 ==================== */
+
+#common-tags-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.common-tag-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.common-tag-option:hover {
+  background-color: var(--bg-hover);
+}
+
+.common-tag-option input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-color);
+}
+
+/* 搜索过滤输入框 */
+#common-tags-search {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 8px;
+}
+
+#common-tags-search:focus {
+  border-color: var(--accent-color);
+}
+
+/* ==================== 已选标签计数指示器 ==================== */
+
+.selected-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background-color: var(--accent-color);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: auto;
+}

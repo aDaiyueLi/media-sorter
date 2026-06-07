@@ -1,0 +1,640 @@
+/**
+ * main.css - 全局样式与主布局
+ * 定义整体页面布局、颜色变量、通用组件样式
+ */
+
+/* ==================== CSS 变量 ==================== */
+:root {
+  --bg-primary: #1e1e2e;
+  --bg-secondary: #282840;
+  --bg-tertiary: #313148;
+  --bg-hover: #3a3a5c;
+  --bg-active: #454570;
+  --border-color: #404060;
+  --text-primary: #e0e0f0;
+  --text-secondary: #a0a0c0;
+  --text-muted: #707090;
+  --accent-color: #7c8aff;
+  --accent-hover: #9ba8ff;
+  --danger-color: #ff6b6b;
+  --success-color: #51cf66;
+  --warning-color: #ffa94d;
+  --tag-unset-bg: #ff4444;
+  --tag-unset-text: #ffffff;
+  --scrollbar-thumb: #505070;
+  --scrollbar-track: #282840;
+}
+
+/* ==================== 基础重置 ==================== */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  user-select: none;  /* 防止意外选中 UI 文字 */
+}
+
+/* ==================== 主布局 ==================== */
+#app-container {
+  display: flex;
+  width: 100%;
+  height: calc(100% - 50px);  /* 底部操作栏 50px */
+}
+
+/* ===== 左侧面板：媒体查看区 ===== */
+#viewer-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 350px;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  position: relative;
+}
+
+/* 顶部信息栏 */
+#viewer-info-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  min-height: 40px;
+}
+
+.info-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.info-icon {
+  margin-right: 4px;
+}
+
+#folder-path {
+  cursor: pointer;
+  max-width: 60%;
+}
+
+#folder-path:hover {
+  color: var(--accent-color);
+}
+
+#folder-path-text {
+  color: var(--text-secondary);
+}
+
+#file-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* 分类文件夹路径徽章 */
+.move-folder-badge {
+  color: var(--accent-color) !important;
+  font-size: 12px;
+  max-width: 200px;
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  background-color: rgba(124, 138, 255, 0.1);
+  border: 1px solid rgba(124, 138, 255, 0.3);
+  border-radius: 10px;
+}
+
+/* 媒体显示区域 */
+#media-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: #111122;
+  position: relative;
+  cursor: default;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.btn-add-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px dashed var(--border-color);
+  background-color: transparent;
+  color: var(--text-muted);
+  font-size: 32px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-add-large:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background-color: rgba(124, 138, 255, 0.1);
+}
+
+.add-icon {
+  line-height: 1;
+}
+
+/* 加载指示器 */
+.loading-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 16px 24px;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* ===== 分割线 ===== */
+#panel-resizer {
+  width: 4px;
+  cursor: col-resize;
+  background-color: var(--border-color);
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+#panel-resizer:hover {
+  background-color: var(--accent-color);
+}
+
+/* ===== 右侧面板：标签分类区 ===== */
+#tags-panel {
+  width: 280px;
+  min-width: 200px;
+  max-width: 450px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-secondary);
+}
+
+#tags-panel-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-tertiary);
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+#tags-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  position: relative;
+}
+
+#tags-panel-footer {
+  padding: 8px 16px;
+  border-top: 1px solid var(--border-color);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.footer-hint {
+  font-style: italic;
+}
+
+/* ===== 底部操作栏 ===== */
+#action-bar {
+  width: 100%;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background-color: var(--bg-tertiary);
+  border-top: 1px solid var(--border-color);
+  padding: 0 20px;
+}
+
+.btn-action {
+  padding: 8px 32px;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-confirm {
+  background-color: var(--accent-color);
+  color: #ffffff;
+}
+
+.btn-confirm:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn-confirm:active {
+  transform: translateY(0);
+}
+
+.btn-undo {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.btn-undo:hover {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+/* ==================== 控制栏 ==================== */
+#control-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background-color: var(--bg-tertiary);
+  border-top: 1px solid var(--border-color);
+  min-height: 56px;
+  gap: 12px;
+}
+
+#media-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#file-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ctrl-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* 大图标版控制按钮 */
+.ctrl-btn-lg {
+  padding: 10px 18px;
+  font-size: 16px;
+  min-width: 52px;
+  min-height: 44px;
+}
+
+/* 播放/暂停按钮更突出 */
+.ctrl-btn-play {
+  font-size: 20px;
+  min-width: 56px;
+  min-height: 48px;
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #fff;
+}
+
+.ctrl-btn-play:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.ctrl-btn:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--accent-color);
+}
+
+.ctrl-btn:active {
+  background-color: var(--bg-active);
+}
+
+/* 进度条容器 */
+#progress-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 4px;
+}
+
+#progress-bar {
+  width: 200px;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border-color);
+  border-radius: 2px;
+  cursor: pointer;
+  outline: none;
+}
+
+#progress-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  cursor: pointer;
+}
+
+#time-current, #time-duration {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: "Consolas", "Courier New", monospace;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* 音量百分比显示 */
+.volume-percent {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent-color);
+  min-width: 36px;
+  text-align: center;
+  font-family: "Consolas", "Courier New", monospace;
+  user-select: none;
+}
+
+/* ==================== 模态弹窗 ==================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 400px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.modal-content h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.modal-content label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="number"],
+.modal-content select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 12px;
+}
+
+.modal-content input:focus,
+.modal-content select:focus {
+  border-color: var(--accent-color);
+}
+
+.modal-content .btn-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.modal-content button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-content .btn-primary {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.modal-content .btn-primary:hover {
+  background-color: var(--accent-hover);
+}
+
+.modal-content .btn-secondary {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.modal-content .btn-secondary:hover {
+  background-color: var(--bg-hover);
+}
+
+/* 快捷键设置表格 */
+.shortcut-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.shortcut-table th, .shortcut-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+}
+
+.shortcut-table th {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.shortcut-table td {
+  color: var(--text-primary);
+}
+
+.shortcut-key {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  font-family: "Consolas", monospace;
+  font-size: 12px;
+}
+
+.shortcut-conflict {
+  color: var(--danger-color) !important;
+  font-weight: 600;
+}
+
+/* ==================== 右键菜单 ==================== */
+.context-menu {
+  position: fixed;
+  min-width: 180px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  padding: 4px 0;
+  overflow: hidden;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.context-menu-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.context-menu-item.danger {
+  color: var(--danger-color);
+}
+
+.context-menu-separator {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 4px 0;
+}
+
+/* ==================== 滚动条 ==================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #606080;
+}
+
+/* ==================== 通用提示工具 ==================== */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 11px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+
+/* ==================== 通知提示 ==================== */
+.toast {
+  position: fixed;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 24px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  z-index: 1500;
+  opacity: 0;
+  animation: toast-in 0.3s forwards, toast-out 0.3s 2.5s forwards;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
