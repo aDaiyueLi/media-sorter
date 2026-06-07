@@ -290,7 +290,10 @@ const App = {
 
     api.onMenuEvent('menu-reset-shortcuts', async () => {
       await SettingsManager.set('shortcuts', SettingsManager.DEFAULTS.shortcuts);
+      await SettingsManager.set('tagShortcuts', SettingsManager.DEFAULTS.tagShortcuts);
       ShortcutsManager.reload();
+      TagPanel._updateShortcutKeys();
+      TagPanel._render();
     });
 
     api.onMenuEvent('menu-manage-common-tags', () => {

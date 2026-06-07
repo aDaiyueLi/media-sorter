@@ -33,6 +33,12 @@ const SettingsManager = {
       confirm: 'Enter',
       undo: 'Backspace'
       // 标签快捷键 (1-9, 字母键) 不在 shortcuts 中，由 tagPanel 动态管理
+    },
+    // 标签快捷键按位置映射: {"1": "1", "2": "2", ..., "10": "q", ...}
+    // 位置 1-9 默认数字键，位置不变的快捷键映射不会因标签增删而丢失
+    tagShortcuts: {
+      '1': '1', '2': '2', '3': '3', '4': '4', '5': '5',
+      '6': '6', '7': '7', '8': '8', '9': '9'
     }
   },
 
@@ -121,6 +127,67 @@ const SettingsManager = {
       if (name !== action && key === newKey) {
         return name; // 返回冲突的功能名
       }
+    }
+    return null;
+  },
+
+  // ==================== 标签快捷键（按位置持久化） ====================
+
+  /**
+   * 获取全部标签快捷键映射
+   * @returns {object} { 位置字符串: 按键字符串 }
+   */
+  getTagShortcuts() {
+    const settings = this.get();
+    return settings.tagShortcuts || this.DEFAULTS.tagShortcuts;
+  },
+
+  /**
+   * 获取指定位置的标签快捷键
+   * @param {number} position - 1-based 标签位置
+   * @returns {string|null} 快捷键字符，未设置返回 null
+   */
+  getTagShortcutAt(position) {
+    const shortcuts = this.getTagShortcuts();
+    const key = shortcuts[String(position)];
+    return key || null;
+  },
+
+  /**
+   * 设置指定位置的标签快捷键并持久化
+   * @param {number} position - 1-based 标签位置
+   * @param {string} key - 按键（字母或数字）
+   */
+  async setTagShortcut(position, key) {
+    await this.set(`tagShortcuts.${position}`, key.toLowerCase());
+  },
+
+  /**
+   * 清除指定位置的标签快捷键
+   * @param {number} position - 1-based 标签位置
+   */
+  async clearTagShortcut(position) {
+    await this.set(`tagShortcuts.${position}`, '');
+  },
+
+  /**
+   * 检测标签快捷键冲突
+   * @param {number} position - 当前标签位置（用于排除自身）
+   * @param {string} newKey - 新按键
+   * @returns {{target: string, type: 'tag'|'global'}|null}
+   */
+  checkTagShortcutConflict(position, newKey) {
+    // 1. 检查是否与其他位置的标签快捷键冲突
+    const tagShortcuts = this.getTagShortcuts();
+    for (const [posStr, key] of Object.entries(tagShortcuts)) {
+      if (posStr !== String(position) && key && key.toLowerCase() === newKey.toLowerCase()) {
+        return { target: posStr, type: 'tag' };
+      }
+    }
+    // 2. 检查是否与全局快捷键冲突
+    const globalConflict = this.checkConflict(null, newKey);
+    if (globalConflict) {
+      return { target: globalConflict, type: 'global' };
     }
     return null;
   },

@@ -205,19 +205,23 @@ const TagPanel = {
   },
 
   /**
-   * 根据标签索引自动分配快捷键
-   * 前9个: 1-9, 第10-30个: 无默认
+   * 根据标签索引获取快捷键（优先从持久化设置读取，否则使用默认值）
+   * 前9个默认 1-9，后续默认为空
    * @param {number} index - 1-based 标签位置索引
    * @returns {string} 快捷键字符
    */
   _getAutoShortcut(index) {
+    // 优先从持久化设置中按位置读取
+    const persisted = SettingsManager.getTagShortcutAt(index);
+    if (persisted !== null && persisted !== '') return persisted;
+    // 默认规则：位置1-9 → 数字
     if (index <= 9) {
       return String(index);
     }
-    return ''; // 后续可手动设置字母键
+    return '';
   },
 
-  /** 根据当前顺序更新所有标签的快捷键 */
+  /** 根据当前顺序更新所有标签的快捷键（从持久化设置按位置读取） */
   _updateShortcutKeys() {
     this._tags.forEach((tag, i) => {
       tag.shortcutKey = this._getAutoShortcut(i + 1);
@@ -456,8 +460,9 @@ const TagPanel = {
     const errorEl = document.getElementById('shortcut-capture-error');
 
     // 清除/重置快捷键
-    document.getElementById('btn-shortcut-clear').addEventListener('click', () => {
+    document.getElementById('btn-shortcut-clear').addEventListener('click', async () => {
       ShortcutsManager.stopCapture();
+      await SettingsManager.clearTagShortcut(position);
       tag.shortcutKey = this._getAutoShortcut(position);
       this._render();
       overlay.style.display = 'none';
@@ -478,7 +483,7 @@ const TagPanel = {
     });
 
     // 开始捕获按键
-    ShortcutsManager.startCapture((key) => {
+    ShortcutsManager.startCapture(async (key) => {
       errorEl.style.display = 'none';
 
       // 验证：必须是单个字母 a-z 或数字 0-9
@@ -488,26 +493,24 @@ const TagPanel = {
         return;
       }
 
-      // 验证：不能与已有标签快捷键冲突
-      const conflictTag = this._tags.find(
-        t => t.id !== tagId && t.shortcutKey && t.shortcutKey.toLowerCase() === key.toLowerCase()
-      );
-      if (conflictTag) {
-        errorEl.textContent = '与标签「' + conflictTag.name + '」的快捷键冲突 (' + key.toUpperCase() + ')';
-        errorEl.style.display = 'block';
-        return;
-      }
-
-      // 验证：不能与全局快捷键冲突
-      const globalConflict = ShortcutsManager.findActionByKey(key);
-      if (globalConflict) {
-        const conflictLabel = ShortcutsManager.ACTION_LABELS[globalConflict] || globalConflict;
-        errorEl.textContent = '与全局功能「' + conflictLabel + '」的快捷键冲突 (' + key.toUpperCase() + ')';
+      // 冲突检测（标签间 + 全局）
+      const conflict = SettingsManager.checkTagShortcutConflict(position, key);
+      if (conflict) {
+        if (conflict.type === 'tag') {
+          const conflictPosTag = this._tags[parseInt(conflict.target) - 1];
+          const conflictName = conflictPosTag ? conflictPosTag.name : '?';
+          errorEl.textContent = '与标签「' + conflictName + '」的快捷键冲突 (' + key.toUpperCase() + ')';
+        } else {
+          const conflictLabel = ShortcutsManager.ACTION_LABELS[conflict.target] || conflict.target;
+          errorEl.textContent = '与全局功能「' + conflictLabel + '」的快捷键冲突 (' + key.toUpperCase() + ')';
+        }
         errorEl.style.display = 'block';
         return;
       }
 
       ShortcutsManager.stopCapture();
+      // 持久化到 settings
+      await SettingsManager.setTagShortcut(position, key.toLowerCase());
       tag.shortcutKey = key.toLowerCase();
       this._render();
       overlay.style.display = 'none';

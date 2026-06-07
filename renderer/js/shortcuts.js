@@ -339,7 +339,7 @@ const ShortcutsManager = {
     btn.style.color = 'var(--accent-color)';
     btn.style.borderColor = 'var(--accent-color)';
 
-    this.startCapture((newKey) => {
+    this.startCapture(async (newKey) => {
       this.stopCapture();
       btn.textContent = originalText;
       btn.style.color = '';
@@ -354,30 +354,28 @@ const ShortcutsManager = {
         return;
       }
 
-      // 检查与已有标签快捷键的冲突
-      const conflictTag = TagPanel._tags.find(
-        (t, i) => i !== (position - 1) && t.shortcutKey && t.shortcutKey.toLowerCase() === newKey.toLowerCase()
-      );
-      if (conflictTag) {
-        warningEl.textContent = '与标签「' + conflictTag.name + '」的快捷键冲突 (' + newKey.toUpperCase() + ')';
-        warningEl.style.display = 'block';
-        return;
-      }
-
-      // 检查与全局快捷键的冲突
-      const globalConflict = this.findActionByKey(newKey);
-      if (globalConflict) {
-        const conflictLabel = this.ACTION_LABELS[globalConflict] || globalConflict;
-        warningEl.textContent = '与全局功能「' + conflictLabel + '」的快捷键冲突 (' + newKey.toUpperCase() + ')';
+      // 冲突检测（使用统一的 SettingsManager 方法）
+      const conflict = SettingsManager.checkTagShortcutConflict(position, newKey);
+      if (conflict) {
+        if (conflict.type === 'tag') {
+          const conflictPosTag = TagPanel._tags[parseInt(conflict.target) - 1];
+          const conflictName = conflictPosTag ? conflictPosTag.name : '?';
+          warningEl.textContent = '与标签「' + conflictName + '」的快捷键冲突 (' + newKey.toUpperCase() + ')';
+        } else {
+          const conflictLabel = this.ACTION_LABELS[conflict.target] || conflict.target;
+          warningEl.textContent = '与全局功能「' + conflictLabel + '」的快捷键冲突 (' + newKey.toUpperCase() + ')';
+        }
         warningEl.style.display = 'block';
         return;
       }
 
       warningEl.style.display = 'none';
-      // 直接更新标签的快捷键
+      // 持久化到 settings
+      await SettingsManager.setTagShortcut(position, newKey.toLowerCase());
+      // 同步更新内存中的标签
       tag.shortcutKey = newKey.toLowerCase();
       TagPanel._render();
-      // 更新显示
+      // 更新设置面板中的显示
       const displayEl = document.getElementById('tag-shortcut-display-' + position);
       if (displayEl) displayEl.textContent = newKey.toLowerCase();
     });
