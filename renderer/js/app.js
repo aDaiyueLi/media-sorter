@@ -31,6 +31,9 @@ const App = {
     // 3.5 鼠标滚轮调节音量 —— 在媒体容器上监听滚轮事件
     this._initScrollVolume();
 
+    // 3.6 双击快捷操作：空白区域双击左键=确认，双击右键=撤回
+    this._initDoubleClickActions();
+
     // 4. 注册所有快捷键回调
     this._registerShortcuts();
 
@@ -112,6 +115,58 @@ const App = {
       const delta = e.deltaY > 0 ? -0.05 : 0.05;
       this._adjustVolume(delta);
     }, { passive: false });
+  },
+
+  /**
+   * 双击快捷操作：
+   * - 空白区域双击左键 → 确认打标签
+   * - 空白区域双击右键 → 撤回操作
+   * 适用范围：文件查看窗口、分类面板空白区域
+   */
+  _initDoubleClickActions() {
+    // 右键双击检测状态
+    this._rightClickState = { target: null, time: 0 };
+
+    // 判断点击位置是否为空白区域（排除按钮、标签芯片、输入框等）
+    const isBlankArea = (target) => {
+      if (!target) return false;
+      const tag = target.tagName;
+      if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'A') return false;
+      if (target.closest('.tag-chip')) return false;
+      if (target.closest('.btn-add-large')) return false;
+      if (target.closest('#control-bar')) return false;
+      if (target.closest('#action-bar')) return false;
+      if (target.closest('#viewer-info-bar')) return false;
+      if (target.closest('#progress-bar-container')) return false;
+      return true;
+    };
+
+    // 左键双击 = 确认
+    document.addEventListener('dblclick', (e) => {
+      if (!isBlankArea(e.target)) return;
+      // 确认打标签
+      this.confirmTagging();
+    });
+
+    // 右键双击检测 = 撤回
+    document.addEventListener('contextmenu', (e) => {
+      if (!isBlankArea(e.target)) return;
+      const now = Date.now();
+      const prev = this._rightClickState;
+
+      // 同一目标区域 400ms 内连续两次右键 → 视为双击
+      if (prev.target === e.target && (now - prev.time) < 400) {
+        e.preventDefault();
+        e.stopPropagation();
+        prev.target = null;
+        prev.time = 0;
+        this.undoTagging();
+        return;
+      }
+
+      prev.target = e.target;
+      prev.time = now;
+    });
   },
 
   // ==================== 确认打标签 ====================

@@ -595,7 +595,10 @@ const TagPanel = {
     const content = document.getElementById('modal-content');
 
     let html = '<h2>从常用标签中选择</h2>';
-    html += '<input type="text" id="common-tags-search" placeholder="搜索标签...">';
+    html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;">';
+    html += '<input type="text" id="common-tags-search" placeholder="搜索标签..." style="flex:1;">';
+    html += '<a id="btn-select-all-common" style="cursor:pointer;font-size:13px;color:var(--accent-color);white-space:nowrap;user-select:none;">全选</a>';
+    html += '</div>';
     // 标签芯片容器（flex-wrap 布局，点击选中/取消，选中蓝色高亮）
     html += '<div id="common-tags-select" style="display:flex;flex-wrap:wrap;gap:8px;max-height:300px;overflow-y:auto;padding:8px 0;">';
     commonTags.forEach((name, i) => {
@@ -617,6 +620,33 @@ const TagPanel = {
     // 已选中的标签集合
     const selected = new Set();
 
+    // 更新全选按钮文字
+    const updateSelectAllBtn = () => {
+      const chips = document.querySelectorAll('.common-select-chip');
+      const visibleChips = Array.from(chips).filter(c => c.style.display !== 'none');
+      const allSelected = visibleChips.length > 0 && visibleChips.every(c => selected.has(c.dataset.tagName));
+      const btn = document.getElementById('btn-select-all-common');
+      if (btn) btn.textContent = allSelected ? '取消全选' : '全选';
+    };
+
+    // 全选/取消全选按钮
+    document.getElementById('btn-select-all-common').addEventListener('click', () => {
+      const chips = document.querySelectorAll('.common-select-chip');
+      const visibleChips = Array.from(chips).filter(c => c.style.display !== 'none');
+      const allSelected = visibleChips.every(c => selected.has(c.dataset.tagName));
+
+      visibleChips.forEach(chip => {
+        if (allSelected) {
+          selected.delete(chip.dataset.tagName);
+          chip.classList.remove('selected');
+        } else {
+          selected.add(chip.dataset.tagName);
+          chip.classList.add('selected');
+        }
+      });
+      updateSelectAllBtn();
+    });
+
     // 搜索过滤
     const searchInput = document.getElementById('common-tags-search');
     searchInput.addEventListener('input', () => {
@@ -625,6 +655,7 @@ const TagPanel = {
         const text = chip.querySelector('.tag-name').textContent.toLowerCase();
         chip.style.display = text.includes(query) ? 'inline-flex' : 'none';
       });
+      updateSelectAllBtn();
     });
 
     // 点击芯片切换选中状态（视觉反馈）
@@ -638,6 +669,7 @@ const TagPanel = {
           selected.add(name);
           chip.classList.add('selected');
         }
+        updateSelectAllBtn();
       });
     });
 
