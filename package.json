@@ -28,8 +28,11 @@
           "arch": ["x64"]
         }
       ],
-      "icon": null
+      "icon": null,
+      "sign": null,
+      "signAndEditExecutable": false
     },
+    "forceCodeSigning": false,
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
