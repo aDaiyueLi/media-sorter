@@ -322,6 +322,7 @@ const TagPanel = {
 
     this._renderContextMenu([
       { label: '重命名', icon: '✏️', action: () => this._promptRenameTag(tagId) },
+      { label: '设置快捷键', icon: '⌨️', action: () => this._promptSetShortcut(tagId) },
       { label: '删除', icon: '🗑️', action: () => this.removeTag(tagId), danger: true },
       { separator: true },
       { label: '保存为常用', icon: '⭐', action: () => this._saveTagAsCommon(tag) }
@@ -419,6 +420,101 @@ const TagPanel = {
       }
     });
   },
+
+
+  /**
+   * 弹出快捷键设置对话框
+   * 可设置为单个字母/数字键，位置 1-9 默认使用数字键，位置 ≥10 可手动设置字母键
+   */
+  _promptSetShortcut(tagId) {
+    const tag = this._tags.find(t => t.id === tagId);
+    if (!tag) return;
+
+    const tagIndex = this._tags.indexOf(tag);
+    const position = tagIndex + 1;
+
+    const overlay = document.getElementById('modal-overlay');
+    const content = document.getElementById('modal-content');
+
+    let html = '<h2>设置标签快捷键</h2>';
+    html += '<p style="margin-bottom:4px;">标签: <strong>' + this._escapeHTML(tag.name) + '</strong>（第 ' + position + ' 个）</p>';
+    if (position <= 9) {
+      html += '<p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">默认快捷键为数字 <strong>' + position + '</strong>，可按需改为其他键</p>';
+    } else {
+      html += '<p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">请输入单个字母键（A-Z）</p>';
+    }
+    html += '<div id="shortcut-capture-display" style="text-align:center;padding:32px 16px;font-size:48px;color:var(--accent-color);border:3px dashed var(--accent-color);border-radius:12px;margin-bottom:8px;">等待按键...</div>';
+    html += '<p id="shortcut-capture-error" style="color:var(--danger-color);font-size:13px;text-align:center;display:none;"></p>';
+    html += '<div class="btn-row" style="margin-top:12px;">';
+    html += '<button id="btn-shortcut-clear" class="btn-secondary" style="margin-right:auto;">清除快捷键</button>';
+    html += '<button id="btn-shortcut-cancel-set" class="btn-secondary">取消</button>';
+    html += '</div>';
+
+    content.innerHTML = html;
+    overlay.style.display = 'flex';
+
+    const errorEl = document.getElementById('shortcut-capture-error');
+
+    // 清除/重置快捷键
+    document.getElementById('btn-shortcut-clear').addEventListener('click', () => {
+      ShortcutsManager.stopCapture();
+      tag.shortcutKey = this._getAutoShortcut(position);
+      this._render();
+      overlay.style.display = 'none';
+      this._showToast('标签「' + tag.name + '」快捷键已重置');
+    });
+
+    // 取消
+    document.getElementById('btn-shortcut-cancel-set').addEventListener('click', () => {
+      ShortcutsManager.stopCapture();
+      overlay.style.display = 'none';
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        ShortcutsManager.stopCapture();
+        overlay.style.display = 'none';
+      }
+    });
+
+    // 开始捕获按键
+    ShortcutsManager.startCapture((key) => {
+      errorEl.style.display = 'none';
+
+      // 验证：必须是单个字母 a-z 或数字 0-9
+      if (!/^[a-z0-9]$/i.test(key)) {
+        errorEl.textContent = '标签快捷键只能是单个字母或数字，请重试';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      // 验证：不能与已有标签快捷键冲突
+      const conflictTag = this._tags.find(
+        t => t.id !== tagId && t.shortcutKey && t.shortcutKey.toLowerCase() === key.toLowerCase()
+      );
+      if (conflictTag) {
+        errorEl.textContent = '与标签「' + conflictTag.name + '」的快捷键冲突 (' + key.toUpperCase() + ')';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      // 验证：不能与全局快捷键冲突
+      const globalConflict = ShortcutsManager.findActionByKey(key);
+      if (globalConflict) {
+        const conflictLabel = ShortcutsManager.ACTION_LABELS[globalConflict] || globalConflict;
+        errorEl.textContent = '与全局功能「' + conflictLabel + '」的快捷键冲突 (' + key.toUpperCase() + ')';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      ShortcutsManager.stopCapture();
+      tag.shortcutKey = key.toLowerCase();
+      this._render();
+      overlay.style.display = 'none';
+      this._showToast('标签「' + tag.name + '」快捷键已设置为 ' + key.toUpperCase());
+    });
+  },
+
 
   /** 确认后删除所有标签 */
   _confirmRemoveAll() {

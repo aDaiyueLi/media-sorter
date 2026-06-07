@@ -44,6 +44,22 @@ const ShortcutsManager = {
     '操作确认': ['confirm', 'undo']
   },
 
+  // ==================== 查找 ====================
+
+  /**
+   * 根据按键查找对应的全局功能
+   * @param {string} key - 按键名称
+   * @returns {string|null} 功能名，未找到返回 null
+   */
+  findActionByKey(key) {
+    for (const [action, registeredKey] of Object.entries(this._shortcuts)) {
+      if (registeredKey && registeredKey.toLowerCase() === key.toLowerCase()) {
+        return action;
+      }
+    }
+    return null;
+  },
+
   // ==================== 初始化 ====================
 
   /**
@@ -211,6 +227,26 @@ const ShortcutsManager = {
       html += '</tbody></table>';
     }
 
+    // 标签快捷键部分（动态读取当前标签列表，最多30个）
+    const tags = TagPanel._tags;
+    if (tags && tags.length > 0) {
+      html += '<h3 style="margin-top: 16px; margin-bottom: 8px; color: var(--text-secondary); font-size: 14px;">标签快捷键</h3>';
+      html += '<p style="color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">前9个默认数字键 1-9，后续可手动设为字母键。最多支持前30个标签</p>';
+      html += '<table class="shortcut-table"><thead><tr><th>位置</th><th>标签名</th><th>快捷键</th><th>操作</th></tr></thead><tbody>';
+      tags.forEach((tag, i) => {
+        const pos = i + 1;
+        if (pos > 30) return;
+        const currentKey = tag.shortcutKey || '未设置';
+        html += '<tr>'
+          + '<td>' + pos + '</td>'
+          + '<td>' + this._escapeHTML(tag.name) + '</td>'
+          + '<td><span class="shortcut-key" id="tag-shortcut-display-' + pos + '">' + currentKey + '</span></td>'
+          + '<td><button class="btn-edit-shortcut btn-edit-tag-shortcut" data-tag-pos="' + pos + '" style="padding:4px 12px; border:1px solid var(--border-color); border-radius:4px; background:var(--bg-tertiary); color:var(--text-primary); cursor:pointer;">修改</button></td>'
+          + '</tr>';
+      });
+      html += '</tbody></table>';
+    }
+
     // 冲突提示区域
     html += '<div id="shortcut-conflict-warning" style="margin-top: 16px; padding: 8px 12px; background-color: rgba(255, 107, 107, 0.15); border: 1px solid var(--danger-color); border-radius: 6px; color: var(--danger-color); font-size: 13px; display: none;"></div>';
 
@@ -221,11 +257,19 @@ const ShortcutsManager = {
     content.innerHTML = html;
     overlay.style.display = 'flex';
 
-    // 绑定修改按钮事件
-    content.querySelectorAll('.btn-edit-shortcut').forEach(btn => {
+    // 绑定修改按钮事件（全局快捷键）
+    content.querySelectorAll('.btn-edit-shortcut:not(.btn-edit-tag-shortcut)').forEach(btn => {
       btn.addEventListener('click', () => {
         const action = btn.dataset.action;
         this._onEditShortcut(action, btn);
+      });
+    });
+
+    // 绑定修改按钮事件（标签快捷键）
+    content.querySelectorAll('.btn-edit-tag-shortcut').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pos = parseInt(btn.dataset.tagPos);
+        this._onEditTagShortcut(pos, btn);
       });
     });
 
@@ -278,5 +322,71 @@ const ShortcutsManager = {
       const displayEl = document.getElementById(`shortcut-display-${action}`);
       if (displayEl) displayEl.textContent = newKey;
     });
+  },
+
+  /**
+   * 处理标签快捷键修改按钮点击
+   * @param {number} position - 标签位置（1-based）
+   * @param {HTMLElement} btn - 被点击的按钮元素
+   */
+  _onEditTagShortcut(position, btn) {
+    const tags = TagPanel._tags;
+    if (!tags || position > tags.length) return;
+
+    const tag = tags[position - 1];
+    const originalText = btn.textContent;
+    btn.textContent = '等待按键...';
+    btn.style.color = 'var(--accent-color)';
+    btn.style.borderColor = 'var(--accent-color)';
+
+    this.startCapture((newKey) => {
+      this.stopCapture();
+      btn.textContent = originalText;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+
+      const warningEl = document.getElementById('shortcut-conflict-warning');
+
+      // 验证：必须是单个字母或数字
+      if (!/^[a-z0-9]$/i.test(newKey)) {
+        warningEl.textContent = '标签快捷键只能是单个字母或数字（A-Z / 0-9）';
+        warningEl.style.display = 'block';
+        return;
+      }
+
+      // 检查与已有标签快捷键的冲突
+      const conflictTag = TagPanel._tags.find(
+        (t, i) => i !== (position - 1) && t.shortcutKey && t.shortcutKey.toLowerCase() === newKey.toLowerCase()
+      );
+      if (conflictTag) {
+        warningEl.textContent = '与标签「' + conflictTag.name + '」的快捷键冲突 (' + newKey.toUpperCase() + ')';
+        warningEl.style.display = 'block';
+        return;
+      }
+
+      // 检查与全局快捷键的冲突
+      const globalConflict = this.findActionByKey(newKey);
+      if (globalConflict) {
+        const conflictLabel = this.ACTION_LABELS[globalConflict] || globalConflict;
+        warningEl.textContent = '与全局功能「' + conflictLabel + '」的快捷键冲突 (' + newKey.toUpperCase() + ')';
+        warningEl.style.display = 'block';
+        return;
+      }
+
+      warningEl.style.display = 'none';
+      // 直接更新标签的快捷键
+      tag.shortcutKey = newKey.toLowerCase();
+      TagPanel._render();
+      // 更新显示
+      const displayEl = document.getElementById('tag-shortcut-display-' + position);
+      if (displayEl) displayEl.textContent = newKey.toLowerCase();
+    });
+  },
+
+  /** HTML 转义 */
+  _escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 };
