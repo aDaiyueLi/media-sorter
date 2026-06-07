@@ -13,9 +13,16 @@ let mainWindow = null;
 
 // ==================== 路径工具 ====================
 
-/** 获取用户数据目录，存放 settings.json / common-tags.json / tag-history.json */
+/**
+ * 获取用户数据目录，存放 settings.json / common-tags.json / tag-history.json
+ * 开发模式：项目根目录下的 data/ 文件夹
+ * 打包模式：exe 同级目录下的 data/ 文件夹
+ */
 function getDataDir() {
-  const dir = path.join(app.getPath('userData'), 'data');
+  const basePath = app.isPackaged
+    ? path.dirname(app.getPath('exe'))
+    : __dirname;
+  const dir = path.join(basePath, 'data');
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
