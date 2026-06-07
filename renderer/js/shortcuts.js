@@ -227,25 +227,25 @@ const ShortcutsManager = {
       html += '</tbody></table>';
     }
 
-    // 标签快捷键部分（动态读取当前标签列表，最多30个）
+    // 标签快捷键部分（始终展示 30 个位置，不受标签数量影响）
     const tags = TagPanel._tags;
-    if (tags && tags.length > 0) {
-      html += '<h3 style="margin-top: 16px; margin-bottom: 8px; color: var(--text-secondary); font-size: 14px;">标签快捷键</h3>';
-      html += '<p style="color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">前9个默认数字键 1-9，后续可手动设为字母键。最多支持前30个标签</p>';
-      html += '<table class="shortcut-table"><thead><tr><th>位置</th><th>标签名</th><th>快捷键</th><th>操作</th></tr></thead><tbody>';
-      tags.forEach((tag, i) => {
-        const pos = i + 1;
-        if (pos > 30) return;
-        const currentKey = tag.shortcutKey || '未设置';
-        html += '<tr>'
-          + '<td>' + pos + '</td>'
-          + '<td>' + this._escapeHTML(tag.name) + '</td>'
-          + '<td><span class="shortcut-key" id="tag-shortcut-display-' + pos + '">' + currentKey + '</span></td>'
-          + '<td><button class="btn-edit-shortcut btn-edit-tag-shortcut" data-tag-pos="' + pos + '" style="padding:4px 12px; border:1px solid var(--border-color); border-radius:4px; background:var(--bg-tertiary); color:var(--text-primary); cursor:pointer;">修改</button></td>'
-          + '</tr>';
-      });
-      html += '</tbody></table>';
+    const tagShortcuts = SettingsManager.getTagShortcuts();
+    html += '<h3 style="margin-top: 16px; margin-bottom: 8px; color: var(--text-secondary); font-size: 14px;">标签快捷键</h3>';
+    html += '<p style="color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">位置1-9默认数字键，位置10-30可手动设置字母键。快捷键按位置持久化，不受标签增删影响</p>';
+    html += '<table class="shortcut-table"><thead><tr><th>位置</th><th>映射标签</th><th>快捷键</th><th>操作</th></tr></thead><tbody>';
+    for (let pos = 1; pos <= 30; pos++) {
+      const tag = tags && pos <= tags.length ? tags[pos - 1] : null;
+      const tagName = tag ? this._escapeHTML(tag.name) : '<span style="color:var(--text-muted);font-style:italic;">（无标签）</span>';
+      const currentKey = tagShortcuts[String(pos)] || '';
+      const displayKey = currentKey || '未设置';
+      html += '<tr>'
+        + '<td>' + pos + '</td>'
+        + '<td>' + tagName + '</td>'
+        + '<td><span class="shortcut-key" id="tag-shortcut-display-' + pos + '">' + displayKey + '</span></td>'
+        + '<td><button class="btn-edit-shortcut btn-edit-tag-shortcut" data-tag-pos="' + pos + '" style="padding:4px 12px; border:1px solid var(--border-color); border-radius:4px; background:var(--bg-tertiary); color:var(--text-primary); cursor:pointer;">修改</button></td>'
+        + '</tr>';
     }
+    html += '</tbody></table>';
 
     // 冲突提示区域
     html += '<div id="shortcut-conflict-warning" style="margin-top: 16px; padding: 8px 12px; background-color: rgba(255, 107, 107, 0.15); border: 1px solid var(--danger-color); border-radius: 6px; color: var(--danger-color); font-size: 13px; display: none;"></div>';
@@ -331,9 +331,7 @@ const ShortcutsManager = {
    */
   _onEditTagShortcut(position, btn) {
     const tags = TagPanel._tags;
-    if (!tags || position > tags.length) return;
-
-    const tag = tags[position - 1];
+    const tag = (tags && position <= tags.length) ? tags[position - 1] : null;
     const originalText = btn.textContent;
     btn.textContent = '等待按键...';
     btn.style.color = 'var(--accent-color)';
@@ -358,8 +356,8 @@ const ShortcutsManager = {
       const conflict = SettingsManager.checkTagShortcutConflict(position, newKey);
       if (conflict) {
         if (conflict.type === 'tag') {
-          const conflictPosTag = TagPanel._tags[parseInt(conflict.target) - 1];
-          const conflictName = conflictPosTag ? conflictPosTag.name : '?';
+          const conflictPosTag = TagPanel._tags ? TagPanel._tags[parseInt(conflict.target) - 1] : null;
+          const conflictName = conflictPosTag ? conflictPosTag.name : '位置 ' + conflict.target;
           warningEl.textContent = '与标签「' + conflictName + '」的快捷键冲突 (' + newKey.toUpperCase() + ')';
         } else {
           const conflictLabel = this.ACTION_LABELS[conflict.target] || conflict.target;
@@ -370,11 +368,13 @@ const ShortcutsManager = {
       }
 
       warningEl.style.display = 'none';
-      // 持久化到 settings
+      // 持久化到 settings（不依赖标签是否存在）
       await SettingsManager.setTagShortcut(position, newKey.toLowerCase());
-      // 同步更新内存中的标签
-      tag.shortcutKey = newKey.toLowerCase();
-      TagPanel._render();
+      // 同步更新内存中的标签（如果有对应标签）
+      if (tag) {
+        tag.shortcutKey = newKey.toLowerCase();
+        TagPanel._render();
+      }
       // 更新设置面板中的显示
       const displayEl = document.getElementById('tag-shortcut-display-' + position);
       if (displayEl) displayEl.textContent = newKey.toLowerCase();
